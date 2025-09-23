@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>脂質・カロリー計算アプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-shadow { box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- ヘッダー -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">🎓 Campus Nutrition Tracker</h1>
+            <p class="text-purple-100">大学生のための栄養管理アプリ - 健康的なキャンパスライフをサポート</p>
+            
+            <!-- カロリーオーバー警告 -->
+            <div id="calorieWarning" class="hidden mt-4 mx-auto max-w-md bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-pulse">
+                <div class="flex items-center justify-center">
+                    <span class="text-2xl mr-2">⚠️</span>
+                    <span class="font-bold text-lg">カロリー摂取オーバーです！</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- プロフィール設定 -->
+        <div class="bg-white rounded-2xl card-shadow p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+                <span class="mr-2">👤</span>プロフィール設定
+            </h2>
+            <div class="grid md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">性別</label>
+                    <select id="gender" onchange="calculateBasalMetabolism()" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="male">男性</option>
+                        <option value="female">女性</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">年齢</label>
+                    <input type="number" id="age" value="20" min="15" max="30" onchange="calculateBasalMetabolism()" 
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">体重 (kg)</label>
+                    <input type="number" id="weight" value="60" min="40" max="120" onchange="calculateBasalMetabolism()" 
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">身長 (cm)</label>
+                    <input type="number" id="height" value="170" min="140" max="200" onchange="calculateBasalMetabolism()" 
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
+                <div class="text-center">
+                    <div class="text-lg font-semibold text-gray-700">1日の推奨摂取カロリー</div>
+                    <div class="text-3xl font-bold text-purple-600" id="recommendedCalories">1800</div>
+                    <div class="text-sm text-gray-600">kcal/日</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+            <!-- 食事入力エリア -->
+            <div class="space-y-6">
+                <!-- 朝食 -->
+                <div class="bg-white rounded-2xl card-shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">🌅</span>朝食
+                        <span class="ml-auto text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full" id="breakfastCalories">0kcal</span>
+                    </h2>
+                    <div class="space-y-3">
+                        <div>
+                            <select id="breakfastSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                                <option value="">食品・食事を選択</option>
+                                <optgroup label="定食・セットメニュー">
+                                    <option value="breakfast_set">朝食セット (トースト+卵+サラダ)</option>
+                                    <option value="japanese_breakfast">和朝食 (ご飯+味噌汁+焼き魚)</option>
+                                    <option value="pancake_set">パンケーキセット</option>
+                                </optgroup>
+                                <optgroup label="単品">
+                                    <option value="rice">白米 (100g)</option>
+                                    <option value="bread">食パン (1枚60g)</option>
+                                    <option value="egg">卵 (1個50g)</option>
+                                    <option value="milk">牛乳 (200ml)</option>
+                                    <option value="banana">バナナ (1本)</option>
+                                    <option value="apple">りんご (1個)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" id="breakfastQuantity" min="0.1" step="0.1" value="1" 
+                                   class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                            <button onclick="addMeal('breakfast')" 
+                                    class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                                追加
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-4 space-y-2" id="breakfastList">
+                        <div class="text-center text-gray-500 py-4 text-sm">まだ追加されていません</div>
+                    </div>
+                </div>
+
+                <!-- 昼食 -->
+                <div class="bg-white rounded-2xl card-shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">☀️</span>昼食
+                        <span class="ml-auto text-sm bg-orange-100 text-orange-800 px-2 py-1 rounded-full" id="lunchCalories">0kcal</span>
+                    </h2>
+                    <div class="space-y-3">
+                        <div>
+                            <select id="lunchSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                                <option value="">食品・食事を選択</option>
+                                <optgroup label="定食・セットメニュー">
+                                    <option value="karaage_set">唐揚げ定食</option>
+                                    <option value="grilled_fish_set">焼き魚定食</option>
+                                    <option value="hamburger_set">ハンバーグ定食</option>
+                                    <option value="curry_rice">カレーライス</option>
+                                    <option value="ramen_set">ラーメンセット</option>
+                                </optgroup>
+                                <optgroup label="単品">
+                                    <option value="rice">白米 (100g)</option>
+                                    <option value="chicken">鶏胸肉 (100g)</option>
+                                    <option value="beef">牛肉 (100g)</option>
+                                    <option value="pork">豚肉 (100g)</option>
+                                    <option value="fish">鮭 (100g)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" id="lunchQuantity" min="0.1" step="0.1" value="1" 
+                                   class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                            <button onclick="addMeal('lunch')" 
+                                    class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                                追加
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-4 space-y-2" id="lunchList">
+                        <div class="text-center text-gray-500 py-4 text-sm">まだ追加されていません</div>
+                    </div>
+                </div>
+
+                <!-- 夕食 -->
+                <div class="bg-white rounded-2xl card-shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">🌙</span>夕食
+                        <span class="ml-auto text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full" id="dinnerCalories">0kcal</span>
+                    </h2>
+                    <div class="space-y-3">
+                        <div>
+                            <select id="dinnerSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">食品・食事を選択</option>
+                                <optgroup label="定食・セットメニュー">
+                                    <option value="steak_set">ステーキ定食</option>
+                                    <option value="sashimi_set">刺身定食</option>
+                                    <option value="tonkatsu_set">とんかつ定食</option>
+                                    <option value="pasta_set">パスタセット</option>
+                                    <option value="pizza_set">ピザセット</option>
+                                </optgroup>
+                                <optgroup label="単品">
+                                    <option value="rice">白米 (100g)</option>
+                                    <option value="chicken">鶏胸肉 (100g)</option>
+                                    <option value="beef">牛肉 (100g)</option>
+                                    <option value="pork">豚肉 (100g)</option>
+                                    <option value="fish">鮭 (100g)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" id="dinnerQuantity" min="0.1" step="0.1" value="1" 
+                                   class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <button onclick="addMeal('dinner')" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                                追加
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-4 space-y-2" id="dinnerList">
+                        <div class="text-center text-gray-500 py-4 text-sm">まだ追加されていません</div>
+                    </div>
+                </div>
+
+                <!-- 間食 -->
+                <div class="bg-white rounded-2xl card-shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">🍪</span>間食
+                        <span class="ml-auto text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded-full" id="snackCalories">0kcal</span>
+                    </h2>
+                    <div class="space-y-3">
+                        <div>
+                            <select id="snackSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                <option value="">食品・食事を選択</option>
+                                <optgroup label="お菓子・デザート">
+                                    <option value="cake_slice">ケーキ (1切れ)</option>
+                                    <option value="ice_cream">アイスクリーム (1個)</option>
+                                    <option value="chocolate">チョコレート (50g)</option>
+                                    <option value="cookies">クッキー (5枚)</option>
+                                </optgroup>
+                                <optgroup label="単品">
+                                    <option value="nuts">アーモンド (30g)</option>
+                                    <option value="banana">バナナ (1本)</option>
+                                    <option value="apple">りんご (1個)</option>
+                                    <option value="cheese">チーズ (20g)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" id="snackQuantity" min="0.1" step="0.1" value="1" 
+                                   class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <button onclick="addMeal('snack')" 
+                                    class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                                追加
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-4 space-y-2" id="snackList">
+                        <div class="text-center text-gray-500 py-4 text-sm">まだ追加されていません</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 今日の摂取量 -->
+            <div class="bg-white rounded-2xl card-shadow p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                    <span class="mr-2">📊</span>今日の摂取量
+                </h2>
+                
+                <!-- 合計表示と進捗 -->
+                <div class="space-y-4 mb-6">
+                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-purple-600" id="totalCalories">0</div>
+                                <div class="text-sm text-gray-600">カロリー (kcal)</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-pink-600" id="totalFat">0.0</div>
+                                <div class="text-sm text-gray-600">脂質 (g)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- カロリー進捗バー -->
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700">カロリー達成率</span>
+                            <span class="text-sm font-bold text-purple-600" id="caloriePercentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300" 
+                                 id="calorieProgressBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 食品リスト -->
+                <div class="space-y-3" id="foodList">
+                </div>
+
+                <div class="flex gap-2 mt-4">
+                    <button onclick="saveToHistory()" 
+                            class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
+                        📅 記録保存
+                    </button>
+                    <button onclick="clearAll()" 
+                            class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
+                        🗑️ クリア
+                    </button>
+                </div>
+                
+                <!-- プロフィール保存ボタン -->
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <button onclick="saveProfile()" 
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 mb-2">
+                        👤 プロフィール保存
+                    </button>
+                    <button onclick="loadProfile()" 
+                            class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
+                        📂 プロフィール読み込み
+                    </button>
+                </div>
+            </div>
+
+            <!-- 週間グラフ -->
+            <div class="bg-white rounded-2xl card-shadow p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                    <span class="mr-2">📈</span>週間カロリー推移
+                </h2>
+                <div class="h-64">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+                <div class="mt-4 text-center">
+                    <button onclick="clearHistory()" 
+                            class="text-sm text-gray-500 hover:text-red-500 transition duration-200">
+                        履歴をクリア
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 大学生向け栄養Tips -->
+        <div class="mt-8 bg-white rounded-2xl card-shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">💡 大学生の栄養管理Tips</h3>
+            <div class="grid md:grid-cols-3 gap-6 text-sm">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
+                    <h4 class="font-semibold text-blue-800 mb-2">🍚 バランス良い食事</h4>
+                    <p class="text-blue-700">主食・主菜・副菜を意識して、1日3食規則正しく摂取しましょう。</p>
+                </div>
+                <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
+                    <h4 class="font-semibold text-green-800 mb-2">💪 運動との組み合わせ</h4>
+                    <p class="text-green-700">適度な運動と合わせることで、健康的な体重管理ができます。</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
+                    <h4 class="font-semibold text-purple-800 mb-2">📱 記録の習慣化</h4>
+                    <p class="text-purple-700">毎日の記録で食生活を見直し、健康意識を高めましょう。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 食品・食事データベース
+        const foodDatabase = {
+            // 単品食品
+            rice: { name: '白米', calories: 168, fat: 0.3, unit: '100g' },
+            bread: { name: '食パン', calories: 158, fat: 2.6, unit: '1枚(60g)' },
+            chicken: { name: '鶏胸肉', calories: 108, fat: 1.5, unit: '100g' },
+            beef: { name: '牛肉', calories: 250, fat: 17.1, unit: '100g' },
+            pork: { name: '豚肉', calories: 263, fat: 19.2, unit: '100g' },
+            fish: { name: '鮭', calories: 138, fat: 4.1, unit: '100g' },
+            egg: { name: '卵', calories: 76, fat: 5.2, unit: '1個(50g)' },
+            milk: { name: '牛乳', calories: 134, fat: 7.6, unit: '200ml' },
+            cheese: { name: 'チーズ', calories: 68, fat: 5.2, unit: '20g' },
+            butter: { name: 'バター', calories: 75, fat: 8.3, unit: '10g' },
+            oil: { name: 'サラダ油', calories: 111, fat: 12, unit: '大さじ1' },
+            avocado: { name: 'アボカド', calories: 187, fat: 18.7, unit: '1個' },
+            nuts: { name: 'アーモンド', calories: 179, fat: 15.4, unit: '30g' },
+            banana: { name: 'バナナ', calories: 86, fat: 0.2, unit: '1本' },
+            apple: { name: 'りんご', calories: 84, fat: 0.3, unit: '1個' },
+            
+            // 朝食セット
+            breakfast_set: { name: '朝食セット', calories: 420, fat: 18.5, unit: '1セット' },
+            japanese_breakfast: { name: '和朝食', calories: 380, fat: 8.2, unit: '1セット' },
+            pancake_set: { name: 'パンケーキセット', calories: 520, fat: 22.3, unit: '1セット' },
+            
+            // 昼食セット
+            karaage_set: { name: '唐揚げ定食', calories: 780, fat: 28.5, unit: '1セット' },
+            grilled_fish_set: { name: '焼き魚定食', calories: 650, fat: 18.2, unit: '1セット' },
+            hamburger_set: { name: 'ハンバーグ定食', calories: 820, fat: 35.4, unit: '1セット' },
+            curry_rice: { name: 'カレーライス', calories: 720, fat: 22.1, unit: '1皿' },
+            ramen_set: { name: 'ラーメンセット', calories: 680, fat: 25.8, unit: '1セット' },
+            
+            // 夕食セット
+            steak_set: { name: 'ステーキ定食', calories: 950, fat: 42.3, unit: '1セット' },
+            sashimi_set: { name: '刺身定食', calories: 580, fat: 12.5, unit: '1セット' },
+            tonkatsu_set: { name: 'とんかつ定食', calories: 890, fat: 38.7, unit: '1セット' },
+            pasta_set: { name: 'パスタセット', calories: 620, fat: 18.9, unit: '1セット' },
+            pizza_set: { name: 'ピザセット', calories: 750, fat: 28.4, unit: '1セット' },
+            
+            // 間食・デザート
+            cake_slice: { name: 'ケーキ', calories: 320, fat: 18.2, unit: '1切れ' },
+            ice_cream: { name: 'アイスクリーム', calories: 180, fat: 9.5, unit: '1個' },
+            chocolate: { name: 'チョコレート', calories: 280, fat: 16.8, unit: '50g' },
+            cookies: { name: 'クッキー', calories: 240, fat: 12.5, unit: '5枚' }
+        };
+
+        let mealData = {
+            breakfast: [],
+            lunch: [],
+            dinner: [],
+            snack: []
+        };
+        let weeklyChart = null;
+        let recommendedCalories = 1800;
+
+        // 基礎代謝計算（Harris-Benedict式）
+        function calculateBasalMetabolism() {
+            const gender = document.getElementById('gender').value;
+            const age = parseInt(document.getElementById('age').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+
+            let bmr;
+            if (gender === 'male') {
+                bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+            } else {
+                bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+            }
+
+            // 活動レベル（軽度活動：1.375）を考慮
+            recommendedCalories = Math.round(bmr * 1.375);
+            document.getElementById('recommendedCalories').textContent = recommendedCalories;
+            updateDisplay();
+        }
+
+        // 履歴管理
+        function getCalorieHistory() {
+            const history = localStorage.getItem('calorieHistory');
+            return history ? JSON.parse(history) : {};
+        }
+
+        function saveToHistory() {
+            const allItems = [...mealData.breakfast, ...mealData.lunch, ...mealData.dinner, ...mealData.snack];
+            if (allItems.length === 0) {
+                alert('記録する食品がありません');
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            const totalCal = allItems.reduce((sum, item) => sum + item.calories, 0);
+            
+            const history = getCalorieHistory();
+            history[today] = totalCal;
+            
+            localStorage.setItem('calorieHistory', JSON.stringify(history));
+            
+            alert(`今日のカロリー（${totalCal}kcal）を記録しました！`);
+            updateChart();
+        }
+
+        function clearHistory() {
+            if (confirm('履歴をすべて削除しますか？')) {
+                localStorage.removeItem('calorieHistory');
+                updateChart();
+            }
+        }
+
+        // グラフ更新
+        function updateChart() {
+            const history = getCalorieHistory();
+            const dates = [];
+            const calories = [];
+            const recommended = [];
+
+            // 過去7日間のデータを準備
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                const displayDate = `${date.getMonth() + 1}/${date.getDate()}`;
+                
+                dates.push(displayDate);
+                calories.push(history[dateStr] || 0);
+                recommended.push(recommendedCalories);
+            }
+
+            if (weeklyChart) {
+                weeklyChart.destroy();
+            }
+
+            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            weeklyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: '摂取カロリー',
+                        data: calories,
+                        borderColor: 'rgb(147, 51, 234)',
+                        backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: '推奨カロリー',
+                        data: recommended,
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'カロリー (kcal)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function addMeal(mealType) {
+            const selectId = mealType + 'Select';
+            const quantityId = mealType + 'Quantity';
+            
+            const foodSelect = document.getElementById(selectId);
+            const quantity = parseFloat(document.getElementById(quantityId).value);
+            
+            if (!foodSelect.value || !quantity || quantity <= 0) {
+                alert('食品と数量を正しく入力してください');
+                return;
+            }
+
+            const food = foodDatabase[foodSelect.value];
+            const calories = Math.round(food.calories * quantity);
+            const fat = Math.round(food.fat * quantity * 10) / 10;
+
+            const item = {
+                id: Date.now(),
+                name: food.name,
+                unit: food.unit,
+                quantity: quantity,
+                calories: calories,
+                fat: fat
+            };
+
+            mealData[mealType].push(item);
+            updateDisplay();
+            
+            // フォームをリセット
+            foodSelect.value = '';
+            document.getElementById(quantityId).value = '1';
+        }
+
+        function removeMealItem(mealType, id) {
+            mealData[mealType] = mealData[mealType].filter(item => item.id !== id);
+            updateDisplay();
+        }
+
+        function clearAll() {
+            const totalItems = Object.values(mealData).reduce((sum, meals) => sum + meals.length, 0);
+            if (totalItems > 0 && confirm('今日の食事記録をすべてクリアしますか？')) {
+                mealData = {
+                    breakfast: [],
+                    lunch: [],
+                    dinner: [],
+                    snack: []
+                };
+                updateDisplay();
+            }
+        }
+
+        function updateDisplay() {
+            // 各食事時間帯の表示を更新
+            updateMealDisplay('breakfast', 'yellow');
+            updateMealDisplay('lunch', 'orange');
+            updateMealDisplay('dinner', 'blue');
+            updateMealDisplay('snack', 'purple');
+
+            // 全体の合計を計算
+            const allItems = [...mealData.breakfast, ...mealData.lunch, ...mealData.dinner, ...mealData.snack];
+            const totalCal = allItems.reduce((sum, item) => sum + item.calories, 0);
+            const totalFatValue = allItems.reduce((sum, item) => sum + item.fat, 0);
+            const percentage = Math.round((totalCal / recommendedCalories) * 100);
+
+            // 合計表示を更新
+            document.getElementById('totalCalories').textContent = totalCal;
+            document.getElementById('totalFat').textContent = totalFatValue.toFixed(1);
+            document.getElementById('caloriePercentage').textContent = `${percentage}%`;
+            
+            const calorieProgressBar = document.getElementById('calorieProgressBar');
+            calorieProgressBar.style.width = `${Math.min(percentage, 100)}%`;
+
+            // 進捗バーの色を変更
+            if (percentage < 80) {
+                calorieProgressBar.className = 'bg-gradient-to-r from-yellow-400 to-orange-400 h-3 rounded-full transition-all duration-300';
+            } else if (percentage <= 120) {
+                calorieProgressBar.className = 'bg-gradient-to-r from-green-400 to-green-500 h-3 rounded-full transition-all duration-300';
+            } else {
+                calorieProgressBar.className = 'bg-gradient-to-r from-red-400 to-red-500 h-3 rounded-full transition-all duration-300';
+            }
+
+            // カロリーオーバー警告の表示/非表示
+            const calorieWarning = document.getElementById('calorieWarning');
+            if (percentage > 100) {
+                calorieWarning.classList.remove('hidden');
+            } else {
+                calorieWarning.classList.add('hidden');
+            }
+        }
+
+        function updateMealDisplay(mealType, color) {
+            const mealList = document.getElementById(mealType + 'List');
+            const mealCalories = document.getElementById(mealType + 'Calories');
+            const items = mealData[mealType];
+
+            if (items.length === 0) {
+                mealList.innerHTML = '<div class="text-center text-gray-500 py-4 text-sm">まだ追加されていません</div>';
+                mealCalories.textContent = '0kcal';
+                return;
+            }
+
+            // 食事リストを表示
+            mealList.innerHTML = items.map(item => `
+                <div class="flex items-center justify-between p-2 bg-${color}-50 rounded-lg border-l-4 border-${color}-400">
+                    <div class="flex-1">
+                        <div class="font-medium text-gray-800 text-sm">${item.name}</div>
+                        <div class="text-xs text-gray-600">${item.quantity} × ${item.unit}</div>
+                    </div>
+                    <div class="text-right mr-2">
+                        <div class="text-xs font-medium text-${color}-600">${item.calories}kcal</div>
+                        <div class="text-xs text-gray-500">${item.fat}g脂質</div>
+                    </div>
+                    <button onclick="removeMealItem('${mealType}', ${item.id})" 
+                            class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition duration-200 text-xs">
+                        ✕
+                    </button>
+                </div>
+            `).join('');
+
+            // 食事時間帯の合計カロリーを表示
+            const mealTotal = items.reduce((sum, item) => sum + item.calories, 0);
+            mealCalories.textContent = mealTotal + 'kcal';
+        }
+
+        // プロフィール保存・読み込み機能
+        function saveProfile() {
+            const profile = {
+                gender: document.getElementById('gender').value,
+                age: document.getElementById('age').value,
+                weight: document.getElementById('weight').value,
+                height: document.getElementById('height').value,
+                recommendedCalories: recommendedCalories
+            };
+            
+            localStorage.setItem('userProfile', JSON.stringify(profile));
+            alert('プロフィールを保存しました！');
+        }
+
+        function loadProfile() {
+            const savedProfile = localStorage.getItem('userProfile');
+            if (!savedProfile) {
+                alert('保存されたプロフィールがありません');
+                return;
+            }
+
+            const profile = JSON.parse(savedProfile);
+            document.getElementById('gender').value = profile.gender;
+            document.getElementById('age').value = profile.age;
+            document.getElementById('weight').value = profile.weight;
+            document.getElementById('height').value = profile.height;
+            
+            calculateBasalMetabolism();
+            alert('プロフィールを読み込みました！');
+        }
+
+        function loadSavedProfile() {
+            const savedProfile = localStorage.getItem('userProfile');
+            if (savedProfile) {
+                const profile = JSON.parse(savedProfile);
+                document.getElementById('gender').value = profile.gender;
+                document.getElementById('age').value = profile.age;
+                document.getElementById('weight').value = profile.weight;
+                document.getElementById('height').value = profile.height;
+            }
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedProfile(); // 保存されたプロフィールを自動読み込み
+            calculateBasalMetabolism();
+            updateChart();
+            
+            // エンターキーで追加
+            ['breakfast', 'lunch', 'dinner', 'snack'].forEach(mealType => {
+                document.getElementById(mealType + 'Quantity').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        addMeal(mealType);
+                    }
+                });
+            });
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'971a1d2247bd19c2',t:'MTc1NTYxMTM2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>日報入力</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+
+    function DailyReportApp() {
+      const [title, setTitle] = useState("");
+      const [content, setContent] = useState("");
+      const [records, setRecords] = useState([]);
+
+      const handleRecord = () => {
+        if (!title.trim()) {
+          alert("タイトルは必須です。");
+          return;
+        }
+        const newRecord = {
+          title,
+          content,
+          timestamp: new Date().toLocaleString(),
+        };
+        setRecords([...records, newRecord]);
+        setTitle("");
+        setContent("");
+      };
+
+      const handleCSVDownload = () => {
+        if (records.length === 0) {
+          alert("記録がありません。");
+          return;
+        }
+        const header = "タイトル,内容,記録日時\n";
+        const rows = records
+          .map(r => `${r.title.replace(/,/g, ' ')},${r.content.replace(/,/g, ' ')},${r.timestamp}`)
+          .join("\n");
+        const csvContent = header + rows;
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `daily_report_${Date.now()}.csv`;
+        link.click();
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6">
+          <div className="bg-gray-200 rounded-2xl shadow-md p-6 w-full max-w-md">
+            <h1 className="text-2xl font-semibold text-center text-gray-700 mb-4">日報入力</h1>
+            <input
+              type="text"
+              placeholder="タイトル (必須)"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full p-2 mb-3 rounded-lg border border-gray-400 focus:outline-none focus:ring focus:ring-gray-300"
+            />
+            <textarea
+              placeholder="内容 (任意)"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full p-2 mb-3 rounded-lg border border-gray-400 focus:outline-none focus:ring focus:ring-gray-300"
+              rows={4}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={handleRecord}
+                className="flex-1 bg-gray-600 text-white p-2 rounded-xl hover:bg-gray-700 transition"
+              >
+                記録
+              </button>
+              <button
+                onClick={handleCSVDownload}
+                className="flex-1 bg-gray-400 text-white p-2 rounded-xl hover:bg-gray-500 transition"
+              >
+                CSV保存
+              </button>
+            </div>
+            {records.length > 0 && (
+              <ul className="mt-4 text-gray-700 text-sm max-h-48 overflow-y-auto">
+                {records.map((r, i) => (
+                  <li key={i} className="border-b border-gray-300 py-1">
+                    <strong>{r.title}</strong> - {r.timestamp}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<DailyReportApp />);
+  </script>
+</body>
+</html>
