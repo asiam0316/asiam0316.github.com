@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TOEFL対策｜日本語→英語 4択（セッション棒グラフ対応）</title>
+  <title>TOEFL対策 英単語4択（日本語→英語）</title>
   <style>
     :root{
       --bg:#0e2f25;          /* 深緑ベース */
@@ -24,7 +24,7 @@
       background:linear-gradient(180deg, var(--bg), #0a231c 60%);
       color:var(--text);
     }
-    .container{ max-width:980px; margin:0 auto; padding:24px; }
+    .container{ max-width:900px; margin:0 auto; padding:24px; }
     header{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; border:1px solid var(--border); background:var(--panel); border-radius:16px; }
     h1{ margin:0; font-size:20px; font-weight:700; letter-spacing:0.02em; }
     .badge{ font-size:12px; padding:6px 10px; border:1px solid var(--border); border-radius:999px; color:var(--muted); }
@@ -66,7 +66,7 @@
     .panel{ margin-top:16px; border:1px solid var(--border); background:var(--panel); border-radius:16px; padding:16px; }
 
     .chart-wrap{ width:100%; overflow:hidden; }
-    canvas{ width:100%; height:180px; display:block; border-radius:12px; background: #0b241d; border:1px solid var(--border); }
+    canvas{ width:100%; height:140px; display:block; border-radius:12px; background: #0b241d; border:1px solid var(--border); }
 
     .small{ font-size:12px; color:var(--muted); }
 
@@ -114,22 +114,20 @@
 
     <div class="panel">
       <div class="row" style="align-items:flex-end;">
-        <div style="flex:2 1 620px;">
-          <div class="small" style="margin-bottom:6px;">セッション（100問）ごとの正答率（棒グラフ、最新20回表示）</div>
+        <div style="flex:2 1 420px;">
+          <div class="small" style="margin-bottom:6px;">正答率の推移（時系列）</div>
           <div class="chart-wrap">
-            <canvas id="chart" width="900" height="180" aria-label="セッション別正答率"></canvas>
+            <canvas id="chart" width="900" height="140" aria-label="正答率推移"></canvas>
           </div>
         </div>
-        <div style="flex:1 1 320px;">
+        <div style="flex:1 1 260px;">
           <div class="small" style="margin-bottom:6px;">カスタム単語（1行に「英語,日本語」）</div>
-          <textarea id="customArea" placeholder="例) evidence,証拠
-abstract,抽象的な
-investigate,調査する"></textarea>
+          <textarea id="customArea" placeholder="例) evidence,証拠\nabstract,抽象的な\ninvestigate,調査する"></textarea>
           <div class="actions" style="margin-top:8px;">
             <button class="btn" id="loadCustomBtn">読み込み</button>
             <button class="btn secondary" id="exportBtn">語彙を書き出し</button>
           </div>
-          <div class="small">※ 読み込むと現在の語彙に置き換えます。習得済みは保持。ローカルストレージにセッション履歴を保存します。</div>
+          <div class="small">※ 読み込むと現在の語彙に置き換えます。習得済みは保持。ローカルストレージに履歴を保存します。</div>
         </div>
       </div>
     </div>
@@ -141,9 +139,9 @@ investigate,調査する"></textarea>
   <script>
     // ===== 設定 =====
     const MAX_QUESTIONS = 100;
-    const MAX_BAR_DISPLAY = 20; // 棒グラフに表示する直近セッション数
 
-    // ===== 語彙データ（内蔵） =====
+    // ===== 語彙データ（TOEFL頻出系を中心に約160語） =====
+    // ※必要に応じてカスタム読込で上書き可能
     let WORDS = [
       {en:"analyze", ja:"分析する"}, {en:"analysis", ja:"分析"}, {en:"approach", ja:"取り組み方"}, {en:"assess", ja:"評価する"},
       {en:"assessment", ja:"評価"}, {en:"assume", ja:"仮定する"}, {en:"assumption", ja:"仮定"}, {en:"benefit", ja:"利益"},
@@ -215,30 +213,32 @@ investigate,調査する"></textarea>
       {en:"insert", ja:"挿入する"}, {en:"instance", ja:"実例"}, {en:"intense", ja:"強烈な"}, {en:"interact", ja:"相互作用する"},
       {en:"interpret", ja:"通訳する"}, {en:"interval", ja:"間隔"}, {en:"intrinsic", ja:"内在的な"}, {en:"invest", ja:"投資する"},
       {en:"involve", ja:"含む"}, {en:"isolate", ja:"隔離する"}, {en:"legislate", ja:"立法する"}, {en:"license", ja:"許可"},
-      {en:"logic", ja:"論理"}, {en:"mature", ja:"成熟した"}, {en:"mediate", ja:"仲介する"}, {en:"medium", ja:"媒体"},
-      {en:"mode", ja:"方式"}, {en:"motivate", ja:"動機づける"}, {en:"negate", ja:"否定する"}, {en:"neutral", ja:"中立の"},
-      {en:"notwithstanding", ja:"〜にもかかわらず"}, {en:"obtain", ja:"獲得する"}, {en:"occupy", ja:"占める"}, {en:"odd", ja:"奇妙な"},
-      {en:"offset", ja:"相殺する"}, {en:"ongoing", ja:"進行中の"}, {en:"option", ja:"選択肢"}, {en:"orient", ja:"方向づける"},
-      {en:"outcome", ja:"成果"}, {en:"overlap", ja:"重複する"}, {en:"panel", ja:"委員会"}, {en:"paradigm", ja:"範型"},
-      {en:"parameter", ja:"媒介変数"}, {en:"participate", ja:"関与する"}, {en:"periodic", ja:"周期的な"}, {en:"phenomenon", ja:"現象"},
-      {en:"plus", ja:"加えて"}, {en:"portion", ja:"一部"}, {en:"pose", ja:"提起する"}, {en:"precise", ja:"正確な"},
-      {en:"predict", ja:"見通す"}, {en:"preliminary", ja:"予備の"}, {en:"presume", ja:"推定する"}, {en:"previous", ja:"以前の"},
-      {en:"prime", ja:"主要な"}, {en:"principal", ja:"主要な"}, {en:"priority", ja:"優先事項"}, {en:"qualitative", ja:"質的な"},
-      {en:"quantitative", ja:"量的な"}, {en:"quote", ja:"引用する"}, {en:"ratio", ja:"比率"}, {en:"rational", ja:"理性的な"},
-      {en:"recover", ja:"取り戻す"}, {en:"regime", ja:"体制"}, {en:"reinforce", ja:"強化する"}, {en:"reject", ja:"拒否する"},
-      {en:"relax", ja:"緩和する"}, {en:"rely", ja:"依拠する"}, {en:"restore", ja:"復元する"}, {en:"restrict", ja:"制約する"},
-      {en:"revenue", ja:"歳入"}, {en:"reverse", ja:"逆にする"}, {en:"revise", ja:"改訂する"}, {en:"scheme", ja:"計画"},
-      {en:"scope", ja:"範囲"}, {en:"shift", ja:"移す"}, {en:"simulate", ja:"模擬する"}, {en:"so-called", ja:"いわゆる"},
-      {en:"specify", ja:"明記する"}, {en:"stable", ja:"安定した"}, {en:"statistic", ja:"統計"}, {en:"strategy", ja:"戦略"},
-      {en:"stress", ja:"強調する"}, {en:"subsidy", ja:"補助金"}, {en:"sum", ja:"合計"}, {en:"suspend", ja:"一時停止する"},
+      {en:"logic", ja:"論理"}, {en:"mature", ja:"成熟した"}, {en:"mediate", ja:"仲介する"}, {en:"mediate", ja:"調停する"},
+      {en:"medium", ja:"媒体"}, {en:"mode", ja:"方式"}, {en:"motivate", ja:"動機づける"}, {en:"negate", ja:"否定する"},
+      {en:"neutral", ja:"中立の"}, {en:"notwithstanding", ja:"〜にもかかわらず"}, {en:"obtain", ja:"獲得する"}, {en:"occupy", ja:"占める"},
+      {en:"odd", ja:"奇妙な"}, {en:"offset", ja:"相殺する"}, {en:"ongoing", ja:"進行中の"}, {en:"option", ja:"選択肢"},
+      {en:"orient", ja:"方向づける"}, {en:"outcome", ja:"成果"}, {en:"overlap", ja:"重複する"}, {en:"panel", ja:"委員会"},
+      {en:"paradigm", ja:"範型"}, {en:"parameter", ja:"媒介変数"}, {en:"participate", ja:"関与する"}, {en:"periodic", ja:"周期的な"},
+      {en:"phenomenon", ja:"現象"}, {en:"plus", ja:"加えて"}, {en:"portion", ja:"一部"}, {en:"pose", ja:"提起する"},
+      {en:"precise", ja:"正確な"}, {en:"predict", ja:"見通す"}, {en:"preliminary", ja:"予備の"}, {en:"presume", ja:"推定する"},
+      {en:"previous", ja:"以前の"}, {en:"prime", ja:"主要な"}, {en:"principal", ja:"主要な"}, {en:"priority", ja:"優先事項"},
+      {en:"qualitative", ja:"質的な"}, {en:"quantitative", ja:"量的な"}, {en:"quote", ja:"引用する"}, {en:"range", ja:"幅"},
+      {en:"ratio", ja:"比率"}, {en:"rational", ja:"理性的な"}, {en:"recover", ja:"取り戻す"}, {en:"regime", ja:"体制"},
+      {en:"reinforce", ja:"強化する"}, {en:"reject", ja:"拒否する"}, {en:"relax", ja:"緩和する"}, {en:"rely", ja:"依拠する"},
+      {en:"remove", ja:"除去する"}, {en:"requirement", ja:"要件"}, {en:"reside", ja:"居住する"}, {en:"resolve", ja:"決着をつける"},
+      {en:"respond", ja:"反応する"}, {en:"restore", ja:"復元する"}, {en:"restrict", ja:"制約する"}, {en:"revenue", ja:"歳入"},
+      {en:"reverse", ja:"逆にする"}, {en:"revise", ja:"改訂する"}, {en:"scheme", ja:"計画"}, {en:"scope", ja:"範囲"},
+      {en:"shift", ja:"移す"}, {en:"simulate", ja:"模擬する"}, {en:"so-called", ja:"いわゆる"}, {en:"specify", ja:"明記する"},
+      {en:"stable", ja:"安定した"}, {en:"statistic", ja:"統計"}, {en:"strategy", ja:"戦略"}, {en:"stress", ja:"強調する"},
+      {en:"subsidy", ja:"補助金"}, {en:"substitute", ja:"代替する"}, {en:"sum", ja:"合計"}, {en:"suspend", ja:"一時停止する"},
       {en:"sustain", ja:"支える"}, {en:"target", ja:"目標"}, {en:"task", ja:"課題"}, {en:"team", ja:"班"}
     ];
 
     // ====== 状態管理 ======
     let asked = 0;
     let correct = 0;
-    let mastered = new Set(JSON.parse(localStorage.getItem('toefl_mastered')||'[]'));
-    let sessions = JSON.parse(localStorage.getItem('toefl_sessions')||'[]'); // 各セッション（100問）の記録: {t, rate}
+    let mastered = new Set(JSON.parse(localStorage.getItem('toefl_mastered')||'[]')); // 日本語（ja）で管理
+    let history = JSON.parse(localStorage.getItem('toefl_history')||'[]'); // {t, asked, correct, rate}
 
     // ====== 要素参照 ======
     const askedEl = document.getElementById('asked');
@@ -264,7 +264,7 @@ investigate,調査する"></textarea>
 
     function save(){
       localStorage.setItem('toefl_mastered', JSON.stringify([...mastered]));
-      localStorage.setItem('toefl_sessions', JSON.stringify(sessions));
+      localStorage.setItem('toefl_history', JSON.stringify(history));
     }
 
     function updateStats(){
@@ -275,44 +275,36 @@ investigate,調査する"></textarea>
       masteredCountEl.textContent = `${mastered.size}`;
     }
 
-    function recordSession(){
-      const rate = asked? (correct/asked) : 0;
-      sessions.push({ t: Date.now(), rate });
-      // keep only recent 200 sessions to avoid unbounded growth
-      if(sessions.length>200) sessions = sessions.slice(-200);
+    function record(correctNow){
+      const rate = (asked? (correct/asked):0);
+      history.push({ t: Date.now(), asked, correct, rate });
       save();
       drawChart();
     }
 
     function drawChart(){
-      ctx.clearRect(0,0,chart.width,chart.height);
-      // 背景グリッド
-      ctx.strokeStyle = '#153a2f'; ctx.lineWidth = 1;
-      for(let i=0;i<=5;i++){ const y = chart.height - 8 - (chart.height-16)*(i/5); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(chart.width,y); ctx.stroke(); }
-
-      const data = sessions.slice(-MAX_BAR_DISPLAY);
-      if(data.length===0) return;
-
-      const pad = 24;
-      const availableW = chart.width - pad*2;
-      const barW = Math.max(12, Math.floor(availableW / data.length) - 6);
-      const gap = Math.max(6, Math.floor((availableW - barW*data.length) / Math.max(1, data.length-1)));
-
-      data.forEach((s, idx)=>{
-        const x = pad + idx*(barW + gap);
-        const h = Math.max(2, Math.floor((chart.height - pad*2) * s.rate)); // rate: 0..1
-        const y = chart.height - pad - h;
-        // バー
-        ctx.fillStyle = s.rate>=0.7 ? getComputedStyle(document.documentElement).getPropertyValue('--accent-2') : getComputedStyle(document.documentElement).getPropertyValue('--accent');
-        ctx.fillRect(x, y, barW, h);
-        // ラベル（%）
-        ctx.fillStyle = '#b8dbc7'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign='center';
-        ctx.fillText(Math.round(s.rate*100)+'%', x + barW/2, y - 6);
+      // クリア
+      ctx.clearRect(0,0,chart.width, chart.height);
+      // 軸・ガイド
+      ctx.strokeStyle = '#1f4b3a';
+      ctx.lineWidth = 1;
+      for(let i=0;i<=5;i++){
+        const y = chart.height - (chart.height-8) * (i/5) - 4;
+        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(chart.width,y); ctx.stroke();
+      }
+      // ライン
+      if(history.length===0) return;
+      const maxX = Math.max(...history.map(h=>h.asked));
+      const pad = 8;
+      ctx.beginPath();
+      history.forEach((h, idx)=>{
+        const x = pad + (chart.width - pad*2) * (h.asked / Math.max(1, maxX));
+        const y = (chart.height - pad) - (chart.height - pad*2) * h.rate; // rate:0..1
+        if(idx===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       });
-
-      // x軸ラベル（最新セッションが右）
-      ctx.fillStyle = '#9fcfb4'; ctx.font='11px system-ui, sans-serif'; ctx.textAlign='right';
-      ctx.fillText('最新 →', chart.width - 6, chart.height - 6);
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-2') || '#22c55e';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
 
     // ====== 出題ロジック ======
@@ -320,16 +312,16 @@ investigate,調査する"></textarea>
     let currentChoices = [];
 
     function availablePool(){
+      // 習得済み（正解済み）を除いたプール
       return WORDS.filter(w=>!mastered.has(w.ja));
     }
 
     function nextQuestion(){
       if(asked >= MAX_QUESTIONS){
-        // セッション終了
-        promptEl.textContent = '100問が終了しました。セッションを記録しました。';
+        promptEl.textContent = '100問が終了しました。おつかれさま！';
         choicesEl.innerHTML = '';
-        nextBtn.disabled = true; skipBtn.disabled = true;
-        recordSession();
+        nextBtn.disabled = true;
+        skipBtn.disabled = true;
         return;
       }
       feedbackEl.textContent=''; feedbackEl.className='feedback';
@@ -370,48 +362,55 @@ investigate,調査する"></textarea>
       if(isCorrect){ correct++; mastered.add(current.ja); }
       updateStats();
 
+      // 見た目
       lockChoices();
-      [...document.querySelectorAll('.choice')].forEach(b=>{ if(b.textContent===current.en){ b.classList.add('correct'); } });
+      [...document.querySelectorAll('.choice')].forEach(b=>{
+        if(b.textContent===current.en){ b.classList.add('correct'); }
+      });
       if(!isCorrect){ btn.classList.add('wrong'); }
 
       feedbackEl.textContent = isCorrect ? `正解：${current.en}` : `不正解：正解は ${current.en}`;
       feedbackEl.className = 'feedback ' + (isCorrect ? 'ok':'ng');
 
+      // 記録
+      record(isCorrect);
       save();
+
       nextBtn.disabled = false;
     }
 
     // ====== イベント ======
     nextBtn.addEventListener('click', nextQuestion);
-    skipBtn.addEventListener('click', ()=>{ nextQuestion(); });
+    skipBtn.addEventListener('click', ()=>{
+      // スキップは出題回数にカウントしない
+      nextQuestion();
+    });
     resetBtn.addEventListener('click', ()=>{
-      if(!confirm('履歴（セッション）と習得済みを初期化します。よろしいですか？')) return;
-      asked=0; correct=0; mastered=new Set(); sessions=[]; save(); updateStats(); drawChart(); nextQuestion();
+      if(!confirm('履歴と習得済みを初期化します。よろしいですか？')) return;
+      asked=0; correct=0; mastered=new Set(); history=[]; save(); updateStats(); drawChart(); nextQuestion();
     });
 
     loadCustomBtn.addEventListener('click', ()=>{
       const text = customArea.value.trim();
       if(!text){ alert('読み込むテキストが空です'); return; }
-      const lines = text.split(/
-+/);
+      const lines = text.split(/\n+/);
       const parsed = [];
       for(const ln of lines){
         const m = ln.split(',');
         if(m.length<2) continue;
         const en = m[0].trim();
-        const ja = m.slice(1).join(',').trim();
+        const ja = m.slice(1).join(',').trim(); // 日本語にカンマが入る場合に対応
         if(en && ja) parsed.push({en, ja});
       }
       if(parsed.length===0){ alert('有効な行が見つかりませんでした。形式: 英語,日本語'); return; }
       WORDS = parsed;
-      // セッションは保持（ユーザー要望に応じてクリア可能）
-      asked=0; correct=0; updateStats(); drawChart(); nextQuestion();
+      asked=0; correct=0; history=[]; // スコア履歴は文脈が変わるのでクリア
+      save(); updateStats(); drawChart(); nextQuestion();
       alert(`語彙を${WORDS.length}件読み込みました。`);
     });
 
     exportBtn.addEventListener('click', ()=>{
-      const rows = WORDS.map(w=>`${w.en},${w.ja}`).join('
-');
+      const rows = WORDS.map(w=>`${w.en},${w.ja}`).join('\n');
       const blob = new Blob([rows], {type:'text/csv;charset=utf-8;'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -420,11 +419,18 @@ investigate,調査する"></textarea>
     });
 
     // ====== 初期化 ======
-    function init(){
-      updateStats(); drawChart(); nextQuestion();
+    function initFromHistory(){
+      // 再計算（ページ再読込時に asked/correct を復元）
+      if(history.length>0){
+        const last = history[history.length-1];
+        asked = last.asked; correct = last.correct;
+      }
     }
 
-    init();
+    initFromHistory();
+    updateStats();
+    drawChart();
+    nextQuestion();
   </script>
 </body>
 </html>
