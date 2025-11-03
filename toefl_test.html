@@ -1,10 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TOEFL対策 英単語4択（日本語→英語）</title>
-  <style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOEFL Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
     :root{
       --bg:#0e2f25;          /* 深緑ベース */
       --panel:#123c2e;       /* やや明るい深緑 */
@@ -74,10 +75,57 @@
     .inline{ display:inline-flex; gap:8px; align-items:center; }
 
     footer{ margin:20px 0 60px; text-align:center; color:var(--muted); font-size:12px; }
+
+    .contact {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 24px;
+      color: #fff;
+      text-align: center;
+    }
+
+    .back-button {
+      display: inline-block;
+      padding: 10px 20px;
+      margin-bottom: 24px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-decoration: none;
+    }
+
+    .back-button:hover {
+      background: var(--accent-2);
+    }
+
+    .content-wrapper {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+    <div class="contact">
+        <button onclick="window.close()" class="back-button">Back</button>
+        <h2 class="page-title">TOEFL Test</h2>
+        <div class="content-wrapper">
+      <div class="container">
     <header>
       <h1>TOEFL対策｜日本語→英語 4択</h1>
     </header>
@@ -432,5 +480,7 @@
     drawChart();
     nextQuestion();
   </script>
+        </div>
+    </div>
 </body>
 </html>
