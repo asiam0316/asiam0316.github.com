@@ -1,147 +1,159 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TOEFL対策 英単語4択（日本語→英語）</title>
-  <style>
-    :root{
-      --bg:#0e2f25;          /* 深緑ベース */
-      --panel:#123c2e;       /* やや明るい深緑 */
-      --accent:#16a34a;      /* 緑の差し色 */
-      --accent-2:#22c55e;    /* 成功トーン */
-      --text:#e8faef;        /* 文字（明） */
-      --muted:#b8dbc7;       /* 補助文字 */
-      --danger:#ef4444;      /* 誤答 */
-      --border:#1f4b3a;      /* 枠線 */
-      --btn:#145f46;
-      --btn-hover:#187256;
-      --btn-disabled:#1a4738;
-    }
-    *{ box-sizing:border-box; }
-    body{
-      margin:0; padding:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Meiryo", sans-serif;
-      background:linear-gradient(180deg, var(--bg), #0a231c 60%);
-      color:var(--text);
-    }
-    .container{ max-width:900px; margin:0 auto; padding:24px; }
-    header{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; border:1px solid var(--border); background:var(--panel); border-radius:16px; }
-    h1{ margin:0; font-size:20px; font-weight:700; letter-spacing:0.02em; }
-    .badge{ font-size:12px; padding:6px 10px; border:1px solid var(--border); border-radius:999px; color:var(--muted); }
-
-    .card{ margin-top:16px; border:1px solid var(--border); background:var(--panel); border-radius:20px; padding:20px; box-shadow:0 8px 24px rgba(0,0,0,.25);
-      backdrop-filter: blur(2px);
-    }
-    .row{ display:flex; gap:16px; flex-wrap:wrap; }
-
-    .stat{
-      display:flex; flex-direction:column; gap:6px; padding:12px 14px; border:1px dashed var(--border); border-radius:12px; min-width:140px; align-items:flex-start; justify-content:center;
-    }
-    .stat .label{ font-size:12px; color:var(--muted); }
-    .stat .value{ font-size:20px; font-weight:700; }
-
-    .q-ja{ font-size:24px; margin:8px 0 14px; letter-spacing:0.02em; }
-
-    .choices{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
-    .choice{
-      display:block; width:100%; text-align:left; padding:14px 16px; border-radius:12px; border:1px solid var(--border); background:var(--btn); color:var(--text);
-      cursor:pointer; font-size:16px; transition: transform .06s ease, background .15s ease, border-color .15s ease;
-    }
-    .choice:hover{ background:var(--btn-hover); transform: translateY(-1px); }
-    .choice[disabled]{ cursor:not-allowed; background:var(--btn-disabled); opacity:.7; transform:none; }
-
-    .choice.correct{ outline:2px solid var(--accent-2); border-color:var(--accent-2); background:rgba(34,197,94,.15); }
-    .choice.wrong{ outline:2px solid var(--danger); border-color:var(--danger); background:rgba(239,68,68,.1); }
-
-    .actions{ display:flex; gap:10px; margin-top:14px; }
-    .btn{ padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--btn); color:var(--text); cursor:pointer; font-weight:600; }
-    .btn:hover{ background:var(--btn-hover); }
-    .btn[disabled]{ cursor:not-allowed; background:var(--btn-disabled); opacity:.7; }
-    .btn.secondary{ background:transparent; }
-
-    .feedback{ min-height:24px; margin-top:8px; font-weight:600; }
-    .feedback.ok{ color:var(--accent-2); }
-    .feedback.ng{ color:var(--danger); }
-
-    .panel{ margin-top:16px; border:1px solid var(--border); background:var(--panel); border-radius:16px; padding:16px; }
-
-    .chart-wrap{ width:100%; overflow:hidden; }
-    canvas{ width:100%; height:140px; display:block; border-radius:12px; background: #0b241d; border:1px solid var(--border); }
-
-    .small{ font-size:12px; color:var(--muted); }
-
-    textarea{ width:100%; min-height:120px; border-radius:12px; border:1px solid var(--border); background:#0b241d; color:var(--text); padding:12px; }
-    .inline{ display:inline-flex; gap:8px; align-items:center; }
-
-    footer{ margin:20px 0 60px; text-align:center; color:var(--muted); font-size:12px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>TOEFL対策｜日本語→英語 4択</h1>
-    </header>
-
-    <div class="card">
-      <div class="row">
-        <div class="stat">
-          <div class="label">出題</div>
-          <div class="value" id="asked">0 / 100</div>
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>TOEFL対策 英単語4択（日本語→英語）</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+    <style>
+      .choices {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: 12px;
+        margin: 16px 0;
+      }
+      .choices .button {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      /* stat blocks for quiz stats (optional dimension-like - adjust as needed) */
+      .stat {
+        background: rgba(255,255,255,0.04);
+        padding: 14px 12px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        font-size: 1em;
+        border: 1px solid rgba(255,255,255,0.08);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        min-width: 120px;
+      }
+      .stat .label { font-size: 12px; color: #aaa; }
+      .stat .value { font-size: 20px; font-weight: bold; color: #fff; }
+      .feedback {
+        min-height: 28px;
+        margin-top: 8px;
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .feedback.ok { color: #22c55e; }
+      .feedback.ng { color: #ef4444; }
+      /* Chart wrap */
+      .chart-wrap {
+        width: 100%; 
+        overflow: hidden; 
+        margin-bottom: 10px;
+      }
+      #chart {
+        width: 100%; 
+        height: 140px; 
+        display: block; 
+        border-radius: 12px; 
+        background: #0b241d;
+        border:1px solid #1f4b3a;
+      }
+      .small { font-size: 12px; color: #999; }
+      textarea { width:100%; min-height:120px; border-radius:8px; border:1px solid #27463e; background:#1b2e26; color:#e8faef; padding:10px; }
+    </style>
+  </head>
+  <body class="is-preload">
+    <!-- Wrapper -->
+    <div id="wrapper">
+      <!-- Header -->
+      <header id="header">
+        <div class="logo">
+          <span class="icon fa-gem"></span>
         </div>
-        <div class="stat">
-          <div class="label">正答</div>
-          <div class="value" id="correct">0</div>
-        </div>
-        <div class="stat">
-          <div class="label">正答率</div>
-          <div class="value" id="rate">0%</div>
-        </div>
-        <div class="stat">
-          <div class="label">習得済み（再出題なし）</div>
-          <div class="value" id="masteredCount">0</div>
-        </div>
-      </div>
-
-      <div class="q-ja" id="prompt">ここに日本語が表示されます</div>
-      <div class="choices" id="choices"></div>
-      <div class="feedback" id="feedback"></div>
-      <div class="actions">
-        <button class="btn" id="nextBtn" disabled>次の問題</button>
-        <button class="btn secondary" id="skipBtn">スキップ</button>
-        <button class="btn secondary" id="resetBtn" title="履歴と習得語を初期化">リセット</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="row" style="align-items:flex-end;">
-        <div style="flex:2 1 420px;">
-          <div class="small" style="margin-bottom:6px;">正答率の推移（時系列）</div>
-          <div class="chart-wrap">
-            <canvas id="chart" width="900" height="140" aria-label="正答率推移"></canvas>
+        <div class="content">
+          <div class="inner">
+            <h1>TOEFL対策｜日本語→英語 4択</h1>
           </div>
         </div>
-        <div style="flex:1 1 260px;">
-          <div class="small" style="margin-bottom:6px;">カスタム単語（1行に「英語,日本語」）</div>
-          <textarea id="customArea" placeholder="例) evidence,証拠\nabstract,抽象的な\ninvestigate,調査する"></textarea>
-          <div class="actions" style="margin-top:8px;">
-            <button class="btn" id="loadCustomBtn">読み込み</button>
-            <button class="btn secondary" id="exportBtn">語彙を書き出し</button>
+        <nav>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+          </ul>
+        </nav>
+      </header>
+      <!-- Main -->
+      <div id="main">
+        <article id="toefl">
+          <h2 class="major">TOEFL 英単語4択テスト</h2>
+
+          <div class="box">
+            <div class="row" style="display:flex; flex-wrap:wrap; gap:16px; margin-bottom:10px;">
+              <div class="stat">
+                <span class="label">出題</span>
+                <span class="value" id="asked">0 / 100</span>
+              </div>
+              <div class="stat">
+                <span class="label">正答</span>
+                <span class="value" id="correct">0</span>
+              </div>
+              <div class="stat">
+                <span class="label">正答率</span>
+                <span class="value" id="rate">0%</span>
+              </div>
+              <div class="stat">
+                <span class="label">習得済み（再出題なし）</span>
+                <span class="value" id="masteredCount">0</span>
+              </div>
+            </div>
           </div>
-          <div class="small">※ 読み込むと現在の語彙に置き換えます。習得済みは保持。ローカルストレージに履歴を保存します。</div>
-        </div>
+
+          <div class="box">
+            <h3 class="major" id="prompt">ここに日本語が表示されます</h3>
+            <div class="choices" id="choices"></div>
+            <div class="feedback" id="feedback"></div>
+            <ul class="actions">
+              <li><button class="button primary" id="nextBtn" disabled>次の問題</button></li>
+              <li><button class="button" id="skipBtn">スキップ</button></li>
+              <li><button class="button" id="resetBtn" title="履歴と習得語を初期化">リセット</button></li>
+            </ul>
+          </div>
+
+          <div class="box">
+            <div class="row" style="align-items:flex-end; display: flex; flex-wrap: wrap;">
+              <div style="flex:2 1 420px;min-width:300px;">
+                <span class="small">正答率の推移（時系列）</span>
+                <div class="chart-wrap">
+                  <canvas id="chart" width="900" height="140" aria-label="正答率推移"></canvas>
+                </div>
+              </div>
+              <div style="flex:1 1 260px;min-width:220px;">
+                <span class="small">カスタム単語（1行に「英語,日本語」）</span>
+                <textarea id="customArea" placeholder="例) evidence,証拠\nabstract,抽象的な\ninvestigate,調査する"></textarea>
+                <ul class="actions" style="margin-top:8px;">
+                  <li><button class="button primary" id="loadCustomBtn">読み込み</button></li>
+                  <li><button class="button" id="exportBtn">語彙を書き出し</button></li>
+                </ul>
+                <span class="small">※ 読み込むと現在の語彙に置き換えます。習得済みは保持。ローカルストレージに履歴を保存します。</span>
+              </div>
+            </div>
+          </div>
+        </article>
       </div>
+      <!-- Footer -->
+      <footer id="footer">
+        <p>&copy; 2025 Toku. Design: <a href="https://html5up.net" target="_blank" rel="noopener">HTML5 UP</a></p>
+      </footer>
     </div>
-
-    <footer>&copy; 2025 Toku.</footer>
-
-  </div>
-
-  <script>
+    <div id="bg"></div>
+    <!-- Scripts (Dimension theme) -->
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/browser.min.js"></script>
+    <script src="assets/js/breakpoints.min.js"></script>
+    <script src="assets/js/util.js"></script>
+    <script src="assets/js/main.js"></script>
+    <!-- TOEFL Quiz Script -->
+    <script>
     // ===== 設定 =====
     const MAX_QUESTIONS = 100;
 
     // ===== 語彙データ（TOEFL頻出系を中心に約160語） =====
-    // ※必要に応じてカスタム読込で上書き可能
     let WORDS = [
       {en:"analyze", ja:"分析する"}, {en:"analysis", ja:"分析"}, {en:"approach", ja:"取り組み方"}, {en:"assess", ja:"評価する"},
       {en:"assessment", ja:"評価"}, {en:"assume", ja:"仮定する"}, {en:"assumption", ja:"仮定"}, {en:"benefit", ja:"利益"},
@@ -302,7 +314,7 @@
         const y = (chart.height - pad) - (chart.height - pad*2) * h.rate; // rate:0..1
         if(idx===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       });
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-2') || '#22c55e';
+      ctx.strokeStyle = '#22c55e';
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -312,7 +324,6 @@
     let currentChoices = [];
 
     function availablePool(){
-      // 習得済み（正解済み）を除いたプール
       return WORDS.filter(w=>!mastered.has(w.ja));
     }
 
@@ -345,7 +356,8 @@
       choicesEl.innerHTML = '';
       currentChoices.forEach((label)=>{
         const btn = document.createElement('button');
-        btn.className='choice'; btn.textContent = label;
+        btn.className='button'; // Dimension theme button
+        btn.textContent = label;
         btn.onclick = ()=>choose(label, btn);
         choicesEl.appendChild(btn);
       });
@@ -353,7 +365,7 @@
     }
 
     function lockChoices(){
-      [...document.querySelectorAll('.choice')].forEach(b=>b.disabled=true);
+      [...document.querySelectorAll('.choices .button')].forEach(b=>b.disabled=true);
     }
 
     function choose(label, btn){
@@ -362,27 +374,22 @@
       if(isCorrect){ correct++; mastered.add(current.ja); }
       updateStats();
 
-      // 見た目
       lockChoices();
-      [...document.querySelectorAll('.choice')].forEach(b=>{
-        if(b.textContent===current.en){ b.classList.add('correct'); }
+      [...document.querySelectorAll('.choices .button')].forEach(b=>{
+        if(b.textContent===current.en){ b.classList.add('ok'); }
       });
-      if(!isCorrect){ btn.classList.add('wrong'); }
+      if(!isCorrect){ btn.classList.add('ng'); }
 
       feedbackEl.textContent = isCorrect ? `正解：${current.en}` : `不正解：正解は ${current.en}`;
       feedbackEl.className = 'feedback ' + (isCorrect ? 'ok':'ng');
-
-      // 記録
       record(isCorrect);
       save();
-
       nextBtn.disabled = false;
     }
 
     // ====== イベント ======
     nextBtn.addEventListener('click', nextQuestion);
     skipBtn.addEventListener('click', ()=>{
-      // スキップは出題回数にカウントしない
       nextQuestion();
     });
     resetBtn.addEventListener('click', ()=>{
@@ -399,12 +406,12 @@
         const m = ln.split(',');
         if(m.length<2) continue;
         const en = m[0].trim();
-        const ja = m.slice(1).join(',').trim(); // 日本語にカンマが入る場合に対応
+        const ja = m.slice(1).join(',').trim();
         if(en && ja) parsed.push({en, ja});
       }
       if(parsed.length===0){ alert('有効な行が見つかりませんでした。形式: 英語,日本語'); return; }
       WORDS = parsed;
-      asked=0; correct=0; history=[]; // スコア履歴は文脈が変わるのでクリア
+      asked=0; correct=0; history=[];
       save(); updateStats(); drawChart(); nextQuestion();
       alert(`語彙を${WORDS.length}件読み込みました。`);
     });
@@ -420,17 +427,15 @@
 
     // ====== 初期化 ======
     function initFromHistory(){
-      // 再計算（ページ再読込時に asked/correct を復元）
       if(history.length>0){
         const last = history[history.length-1];
         asked = last.asked; correct = last.correct;
       }
     }
-
     initFromHistory();
     updateStats();
     drawChart();
     nextQuestion();
-  </script>
-</body>
+    </script>
+  </body>
 </html>
