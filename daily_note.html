@@ -4,36 +4,66 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>日報入力</title>
+  <!-- ライブラリ読み込み（開発用ビルド） -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- ブラウザ上でJSXを変換するためのBabel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- TailwindCSS（ユーティリティCSS） -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
+  <!-- React マウントポイント -->
   <div id="root"></div>
+
+  <!-- JSX をインラインで書くため type="text/babel" を使用 -->
   <script type="text/babel">
+    // React のフックを参照
     const { useState } = React;
 
+    /**
+     * DailyReportApp
+     * - タイトルと内容を入力して記録を一時的な配列に保持するシンプルなコンポーネント
+     * - CSV ダウンロード機能あり（簡易エスケープ）
+     */
     function DailyReportApp() {
+      // コンポーネント状態（state）
+      // title: 入力中のタイトル
+      // content: 入力中の内容
+      // records: 記録済みレコードの配列（オブジェクトの配列）
       const [title, setTitle] = useState("");
       const [content, setContent] = useState("");
       const [records, setRecords] = useState([]);
 
+      /**
+       * handleRecord
+       * - タイトル必須のバリデーションを行い、成功時は records に追加
+       * - 追加後、入力欄をクリアする
+       */
       const handleRecord = () => {
         if (!title.trim()) {
+          // ユーザーに通知（簡易実装）
           alert("タイトルは必須です。");
           return;
         }
         const newRecord = {
           title,
           content,
+          // 表示用タイムスタンプ（ローカル表記）
           timestamp: new Date().toLocaleString(),
         };
+        // 不変性を保って配列に追加
         setRecords([...records, newRecord]);
+        // 入力欄リセット
         setTitle("");
         setContent("");
       };
 
+      /**
+       * handleCSVDownload
+       * - records を CSV に変換してダウンロードする
+       * - 簡易なカンマ置換でエスケープしている（改良の余地あり）
+       */
       const handleCSVDownload = () => {
         if (records.length === 0) {
           alert("記録がありません。");
@@ -51,10 +81,13 @@
         link.click();
       };
 
+      // UI を返す（JSX）
       return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6">
           <div className="bg-gray-200 rounded-2xl shadow-md p-6 w-full max-w-md">
             <h1 className="text-2xl font-semibold text-center text-gray-700 mb-4">日報入力</h1>
+
+            {/* タイトル入力（必須） */}
             <input
               type="text"
               placeholder="タイトル (必須)"
@@ -62,6 +95,8 @@
               onChange={(e) => setTitle(e.target.value)}
               className="w-full p-2 mb-3 rounded-lg border border-gray-400 focus:outline-none focus:ring focus:ring-gray-300"
             />
+
+            {/* 内容入力（任意） */}
             <textarea
               placeholder="内容 (任意)"
               value={content}
@@ -69,6 +104,8 @@
               className="w-full p-2 mb-3 rounded-lg border border-gray-400 focus:outline-none focus:ring focus:ring-gray-300"
               rows={4}
             />
+
+            {/* 操作ボタン群：記録 と CSV保存 */}
             <div className="flex gap-3">
               <button
                 onClick={handleRecord}
@@ -83,9 +120,12 @@
                 CSV保存
               </button>
             </div>
+
+            {/* 記録一覧：存在する場合のみ表示 */}
             {records.length > 0 && (
               <ul className="mt-4 text-gray-700 text-sm max-h-48 overflow-y-auto">
                 {records.map((r, i) => (
+                  // key に index を使っている（小規模で可、編集削除を導入する場合は固有ID推奨）
                   <li key={i} className="border-b border-gray-300 py-1">
                     <strong>{r.title}</strong> - {r.timestamp}
                   </li>
@@ -97,6 +137,7 @@
       );
     }
 
+    // ルート要素にコンポーネントをマウント
     ReactDOM.createRoot(document.getElementById("root")).render(<DailyReportApp />);
   </script>
 </body>
