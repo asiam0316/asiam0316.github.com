@@ -23,14 +23,14 @@
           
           const [columns, setColumns] = useState([
             { id: '1', name: '申請内容チェック' },
-            { id: '2', name: '依頼表記載' },
+            { id: '2', name: '管理表記載' },
             { id: '3', name: '手配済' }
           ]);
           
-          const [dates, setDates] = useState({
-            '1-1': '2026/1/9',
-            '1-2': '2026/1/14',
-            '2-1': '2026/1/9'
+          const [checkStatus, setCheckStatus] = useState({
+            '1-1': { checked: true, date: '2026/1/9' },
+            '1-2': { checked: true, date: '2026/1/14' },
+            '2-1': { checked: true, date: '2026/1/9' }
           });
 
           useEffect(() => {
@@ -40,7 +40,7 @@
                 const data = JSON.parse(savedData);
                 if (data.rows) setRows(data.rows);
                 if (data.columns) setColumns(data.columns);
-                if (data.dates) setDates(data.dates);
+                if (data.checkStatus) setCheckStatus(data.checkStatus);
               } catch (e) {
                 console.error('データの読み込みに失敗しました');
               }
@@ -48,9 +48,9 @@
           }, []);
 
           useEffect(() => {
-            const data = { rows, columns, dates };
+            const data = { rows, columns, checkStatus };
             localStorage.setItem('applicationStatusData', JSON.stringify(data));
-          }, [rows, columns, dates]);
+          }, [rows, columns, checkStatus]);
 
           const addRow = () => {
             const newId = String(Math.max(0, ...rows.map(r => parseInt(r.id))) + 1);
@@ -59,13 +59,13 @@
 
           const deleteRow = (id) => {
             setRows(rows.filter(r => r.id !== id));
-            const newDates = { ...dates };
-            Object.keys(newDates).forEach(key => {
+            const newCheckStatus = { ...checkStatus };
+            Object.keys(newCheckStatus).forEach(key => {
               if (key.startsWith(id + '-')) {
-                delete newDates[key];
+                delete newCheckStatus[key];
               }
             });
-            setDates(newDates);
+            setCheckStatus(newCheckStatus);
           };
 
           const updateRow = (id, field, value) => {
@@ -79,25 +79,39 @@
 
           const deleteColumn = (id) => {
             setColumns(columns.filter(c => c.id !== id));
-            const newDates = { ...dates };
-            Object.keys(newDates).forEach(key => {
+            const newCheckStatus = { ...checkStatus };
+            Object.keys(newCheckStatus).forEach(key => {
               if (key.endsWith('-' + id)) {
-                delete newDates[key];
+                delete newCheckStatus[key];
               }
             });
-            setDates(newDates);
+            setCheckStatus(newCheckStatus);
           };
 
           const updateColumn = (id, value) => {
             setColumns(columns.map(c => c.id === id ? { ...c, name: value } : c));
           };
 
-          const updateDate = (rowId, colId, value) => {
-            setDates({ ...dates, [`${rowId}-${colId}`]: value });
+          const toggleCheck = (rowId, colId) => {
+            const key = `${rowId}-${colId}`;
+            const currentStatus = checkStatus[key];
+            
+            if (currentStatus?.checked) {
+              const newStatus = { ...checkStatus };
+              delete newStatus[key];
+              setCheckStatus(newStatus);
+            } else {
+              const today = new Date();
+              const dateStr = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
+              setCheckStatus({
+                ...checkStatus,
+                [key]: { checked: true, date: dateStr }
+              });
+            }
           };
 
           const exportData = () => {
-            const data = { rows, columns, dates };
+            const data = { rows, columns, checkStatus };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -116,7 +130,7 @@
                   const data = JSON.parse(event.target.result);
                   if (data.rows) setRows(data.rows);
                   if (data.columns) setColumns(data.columns);
-                  if (data.dates) setDates(data.dates);
+                  if (data.checkStatus) setCheckStatus(data.checkStatus);
                   alert('データをインポートしました');
                 } catch (error) {
                   alert('ファイルの読み込みに失敗しました');
@@ -159,10 +173,10 @@
           );
 
           return (
-            <div className="p-6 bg-gray-100 min-h-screen">
+            <div className="p-6 bg-gray-200 min-h-screen">
               <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
-                  <h1 className="text-2xl font-bold text-gray-700">申請状況管理</h1>
+                  <h1 className="text-2xl font-bold text-gray-800">申請状況管理</h1>
                   <div className="flex gap-2">
                     <button
                       onClick={exportData}
@@ -246,17 +260,25 @@
                                 </select>
                               </div>
                             </td>
-                            {columns.map(col => (
-                              <td key={col.id} className="border border-gray-300 px-2 py-2">
-                                <input
-                                  type="text"
-                                  value={dates[`${row.id}-${col.id}`] || ''}
-                                  onChange={(e) => updateDate(row.id, col.id, e.target.value)}
-                                  placeholder="yyyy/M/d"
-                                  className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                              </td>
-                            ))}
+                            {columns.map(col => {
+                              const key = `${row.id}-${col.id}`;
+                              const status = checkStatus[key];
+                              return (
+                                <td key={col.id} className="border border-gray-300 px-2 py-2">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={status?.checked || false}
+                                      onChange={() => toggleCheck(row.id, col.id)}
+                                      className="w-4 h-4 cursor-pointer"
+                                    />
+                                    {status?.checked && (
+                                      <span className="text-sm text-gray-700">{status.date}</span>
+                                    )}
+                                  </div>
+                                </td>
+                              );
+                            })}
                             <td className="border border-gray-300 px-2 py-2 text-center">
                               <button
                                 onClick={() => deleteRow(row.id)}
@@ -295,9 +317,10 @@
                 <div className="mt-4 text-sm text-gray-600 bg-white p-4 rounded-lg shadow">
                   <p className="font-semibold mb-2">💡 使い方のヒント：</p>
                   <ul className="list-disc list-inside space-y-1">
+                    <li>チェックボックスをクリックすると、その日の日付が自動的に記録されます</li>
+                    <li>もう一度クリックするとチェックを外せます</li>
                     <li>データは自動的にブラウザに保存されます</li>
                     <li>他のPCで使用する場合は「エクスポート」でファイル保存し、別のPCで「インポート」してください</li>
-                    <li>日付形式: 2026/1/9 のように入力してください</li>
                   </ul>
                 </div>
               </div>
