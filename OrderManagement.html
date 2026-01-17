@@ -22,9 +22,9 @@
           ]);
           
           const [columns, setColumns] = useState([
-            { id: '1', name: '申請内容チェック' },
-            { id: '2', name: '管理表記載' },
-            { id: '3', name: '手配済' }
+            { id: '1', name: 'step1' },
+            { id: '2', name: 'step2' },
+            { id: '3', name: 'step3' }
           ]);
           
           const [checkStatus, setCheckStatus] = useState({
@@ -323,6 +323,20 @@
                     <li>他のPCで使用する場合は「エクスポート」でファイル保存し、別のPCで「インポート」してください</li>
                   </ul>
                 </div>
+
+                <div className="mt-4 text-sm text-gray-600 bg-white p-4 rounded-lg shadow">
+                  <p className="font-semibold mb-2">💡 利用時の注意点：</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>本アプリは業務上の作業を個人（ローカル環境）で管理する目的での利用を想定しています。</li>
+                    <li>本アプリのデータは ブラウザ内（localStorage）にのみ保存されます。</li>
+                    <li>別のPC・別のブラウザではデータは共有されません。</li>
+                    <li>ブラウザのデータ削除を行うと、保存内容は消えます。</li>
+                    <li>ログイン機能はありません。URLを知っていれば誰でも閲覧できます。</li>
+                    <li>個人情報や機密情報の入力は行わないでください。</li>
+                    <li>スマホ対応していません</li>
+                  </ul>
+                </div>
+                  
               </div>
             </div>
           );
@@ -331,4 +345,5 @@
         ReactDOM.render(<ApplicationStatusManager />, document.getElementById('root'));
     </script>
 </body>
+
 </html>
